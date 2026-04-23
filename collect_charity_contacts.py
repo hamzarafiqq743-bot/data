@@ -212,6 +212,20 @@ def download_and_parse(conn: sqlite3.Connection):
     )
     conn.commit()
     logging.info("Done. %d records saved to %s", len(rows), DB_PATH)
+    return rows
+
+
+def export_csv(conn: sqlite3.Connection, csv_path: str):
+    rows = conn.execute(
+        "SELECT charity_number, name, email, phone, website, address FROM contacts ORDER BY name"
+    ).fetchall()
+
+    with open(csv_path, "w", newline="", encoding="utf-8-sig") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Charity Number", "Name", "Email", "Phone", "Website", "Address"])
+        writer.writerows(rows)
+
+    logging.info("Exported %d rows to %s (open with Excel)", len(rows), csv_path)
 
 
 def print_summary(conn: sqlite3.Connection):
@@ -237,14 +251,10 @@ def main():
     setup_db(conn)
     download_and_parse(conn)
     print_summary(conn)
+    export_csv(conn, "charity_contacts.csv")
     conn.close()
 
-    logging.info("Results saved to: %s", DB_PATH)
-    logging.info(
-        'Query with: sqlite3 %s "SELECT name, email, phone, website FROM contacts'
-        ' WHERE email IS NOT NULL LIMIT 20;"',
-        DB_PATH,
-    )
+    logging.info("Open charity_contacts.csv in Excel to view the data.")
 
 
 if __name__ == "__main__":
