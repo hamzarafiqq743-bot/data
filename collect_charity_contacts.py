@@ -11,8 +11,11 @@ import csv
 import io
 import logging
 import sqlite3
+import sys
 import tempfile
 import zipfile
+
+csv.field_size_limit(sys.maxsize)
 
 import requests
 
