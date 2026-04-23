@@ -95,16 +95,22 @@ def download_and_load_bulk(conn: sqlite3.Connection):
                 logging.info("Parsing %s from ZIP...", filename)
 
                 with zf.open(filename) as raw:
-                    # Try UTF-8 first, fall back to latin-1
+                    # Try UTF-8 (with BOM strip) first, fall back to latin-1
                     try:
-                        content = raw.read().decode("utf-8")
+                        content = raw.read().decode("utf-8-sig")
                     except UnicodeDecodeError:
                         raw.seek(0)
                         content = raw.read().decode("latin-1")
 
+                # Sniff delimiter from first line: post-2021 CC exports use tab,
+                # older files used pipe. Try tab first, fall back to pipe.
+                first_line = content.split("\n", 1)[0]
+                delimiter = "\t" if "\t" in first_line else "|"
+                logging.info("Detected delimiter: %r", delimiter)
+
                 reader = csv.DictReader(
                     io.StringIO(content),
-                    delimiter="|",
+                    delimiter=delimiter,
                     quoting=csv.QUOTE_MINIMAL,
                 )
 
